@@ -257,6 +257,16 @@ struct ComputedValue {
 struct ParseOptions {
   // return an error if an unknown token is encountered, instead of skipping it.
   bool strict = false;
+
+  /**
+   * Locale to use for implicit conversions. If not specified, the default locale
+   * is used.
+   */
+  std::optional<std::string> locale;
+
+  std::locale effectiveLocale() const {
+    return locale.transform([](auto &&str) { return std::locale{str}; }).value_or(std::locale::classic());
+  }
 };
 
 struct EvalOptions {
@@ -286,12 +296,6 @@ struct EvalOptions {
   bool implicitUnitConversion = true;
 
   /**
-   * Locale to use for implicit conversions. If not specified, the default locale
-   * is used.
-   */
-  std::optional<std::string> locale;
-
-  /**
    * How evaluate() renders date time values. Localized by default; set
    * `format` to Neutral for the canonical, locale-independent form.
    * If `locale` is left unset here, the config-level `locale` above is used.
@@ -302,7 +306,7 @@ struct EvalOptions {
   // the options evaluate() actually renders date time values with
   DateTimeFormatOptions effectiveDateTimeFormat() const {
     auto fmt = dateTimeFormat;
-    if (!fmt.locale) fmt.locale = locale;
+    if (!fmt.locale) fmt.locale = parseOptions.locale;
     return fmt;
   }
 };

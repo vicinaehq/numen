@@ -66,7 +66,7 @@ TEST_CASE("a currency amount lands on its minor units even without a conversion"
   CHECK(calc.evaluate("1 usd / 3") == "$0.33");
 
   // jpy has no minor units at all
-  numen::EvalOptions jp{.locale = "ja_JP"};
+  numen::EvalOptions jp{.parseOptions{.locale = "ja_JP"}};
   CHECK(calc.evaluate("1 jpy / 3", jp) == "¥0");
   CHECK(calc.evaluate("1234.7 jpy", jp) == "¥1,235");
 
@@ -95,7 +95,7 @@ TEST_CASE("a ticker the provider quotes a rate for is a currency", "[currency]")
   CHECK(calc.evaluate("1 xmr to eur") == "€184.69");
 
   // a bare amount localizes like any other currency does
-  CHECK(calc.evaluate("2 xmr", {.locale = "en_US"}) == "$400");
+  CHECK(calc.evaluate("2 xmr", {.parseOptions{.locale = "en_US"}}) == "$400");
 
   // provider currencies carry no minor units of their own, so they get a
   // fixed high precision rather than the fiat default
@@ -165,7 +165,7 @@ TEST_CASE("currency with $ in the name should work (crypto tickers)", "[currency
 
 TEST_CASE("a sum is as implicit as a literal, only a 'to' pins the currency", "[currency]") {
   auto calc = test::mockCalc();
-  numen::EvalOptions fr{.locale = "fr_FR"};
+  numen::EvalOptions fr{.parseOptions{.locale = "fr_FR"}};
 
   CHECK(calc.evaluate("100 usd", fr) == "€92.35");
   CHECK(calc.evaluate("50 usd + 50 usd", fr) == "€92.35");

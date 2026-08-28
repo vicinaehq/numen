@@ -214,6 +214,8 @@ protected:
   std::optional<numen::Value> parseNumber();
 
 private:
+  std::locale m_locale;
+  const std::numpunct<char> &m_numpunct;
   Lexer m_lexer;
   DateStringVocab m_dateStringVocab;
   const UnitDatabase &m_unitDb;

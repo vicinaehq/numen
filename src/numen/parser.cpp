@@ -154,7 +154,8 @@ std::optional<std::chrono::year> asYear(double value) {
 } // namespace
 
 Parser::Parser(std::string_view data, const UnitDatabase &unitDb, const ParseOptions &opts)
-    : m_lexer(data), m_unitDb(unitDb), m_opts(opts) {}
+    : m_locale(opts.effectiveLocale()), m_numpunct(std::use_facet<std::numpunct<char>>(m_locale)),
+      m_lexer(data, m_numpunct), m_unitDb(unitDb), m_opts(opts) {}
 
 AST Parser::parse() {
   AST ast;
@@ -829,6 +830,7 @@ std::unique_ptr<Expression> Parser::parseTerm() {
         FunctionCall fn{.name = name->raw};
 
         constexpr auto unterminated = "Expected ) to close the argument list";
+        const auto functionDelim = m_numpunct.decimal_point() == ',' ? ";" : ",";
 
         m_inFunction = true;
 
@@ -839,7 +841,7 @@ std::unique_ptr<Expression> Parser::parseTerm() {
 
           auto sep = m_lexer.peakOrThrow(unterminated);
           if (sep.raw == ")") { break; }
-          if (sep.raw != ",") { throw std::runtime_error("Expected , to add another argument"); }
+          if (sep.raw != functionDelim) { throw std::runtime_error("Expected , to add another argument"); }
 
           m_lexer.next();
         }

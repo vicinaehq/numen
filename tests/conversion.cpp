@@ -61,7 +61,7 @@ TEST_CASE("a source with nothing of the target's kind has no question side", "[c
 
 TEST_CASE("the locale currency conversion is flagged implicit", "[conversion]") {
   auto opts = test::frozenConfig();
-  opts.locale = "fr_FR";
+  opts.parseOptions.locale = "fr_FR";
   auto res = test::mockCalc().compute("100 usd", opts);
   REQUIRE(res);
   REQUIRE(res->conversion);

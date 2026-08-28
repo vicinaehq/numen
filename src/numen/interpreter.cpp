@@ -253,7 +253,7 @@ public:
     if (auto n = result.asNumber(); m_opts.implicitCurrencyConversion && n && n->unit && n->unit->def() &&
                                     n->unit->def()->dimension == dimensions::CURRENCY &&
                                     !result.explicitlyConverted) {
-      auto target = numen::currencyForLocale(m_opts.locale.value_or(numen::monetaryLocale()));
+      auto target = numen::currencyForLocale(m_opts.parseOptions.locale.value_or(numen::monetaryLocale()));
       if (target && !equalsIgnoreCase(*target, n->unit->def()->id)) {
         result = stampUnit(result, convertToUnit(n->n.toDouble(), n->unit->def()->id, *target), true);
       }
@@ -261,7 +261,8 @@ public:
 
     if (auto n = result.asNumber(); m_opts.implicitUnitConversion && n && n->unit && n->unit->def() &&
                                     !n->unit->def()->implicitTarget.empty() && !result.explicitlyConverted) {
-      result = stampUnit(result, convertToUnit(n->n.toDouble(), n->unit->def()->id, n->unit->def()->implicitTarget), true);
+      result = stampUnit(
+          result, convertToUnit(n->n.toDouble(), n->unit->def()->id, n->unit->def()->implicitTarget), true);
     }
 
     if (auto n = result.asNumber(); n && !result.explicitlyConverted) {

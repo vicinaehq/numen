@@ -36,6 +36,8 @@ std::optional<Lexer::Token> Lexer::next() {
     return m_data.substr(startPos, m_cursor - startPos);
   };
 
+  const auto isFractionDelim = [&](char c) { return c == FRACTION_DELIM || c == m_numpunct.decimal_point(); };
+
   const auto hasExponentDigits = [&](std::size_t pos) {
     if (pos < m_data.size() && (m_data[pos] == '+' || m_data[pos] == '-')) ++pos;
     return pos < m_data.size() && isDigit(m_data[pos]);
@@ -98,7 +100,7 @@ std::optional<Lexer::Token> Lexer::next() {
         state = State::String;
         continue;
       }
-      if (c == FRACTION_DELIM && m_cursor + 1 < m_data.size() && isDigit(m_data[m_cursor + 1])) {
+      if (isFractionDelim(c) && m_cursor + 1 < m_data.size() && isDigit(m_data[m_cursor + 1])) {
         state = State::Number;
         continue;
       }
@@ -130,7 +132,7 @@ std::optional<Lexer::Token> Lexer::next() {
       break;
     }
     case State::Number: {
-      if (c == FRACTION_DELIM) {
+      if (isFractionDelim(c)) {
         if (base != 10) { return tryCommit(); }
         if (nfrac == 0) { nfrac = 1; }
         break;

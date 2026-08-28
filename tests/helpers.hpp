@@ -29,10 +29,14 @@ inline const numen::EvalOptions &frozenConfig() {
   static const numen::EvalOptions config = [] {
     std::chrono::year_month_day now{std::chrono::year{2026}, std::chrono::month{1}, std::chrono::day{18}};
     return numen::EvalOptions{
+        .parseOptions =
+            {
+                // without this the ambient locale decides whether currencies auto-convert
+                .locale = "en_US",
+            },
         .now = std::chrono::sys_days(now),
         .timezone = test::zone("UTC"),
-        // without this the ambient locale decides whether currencies auto-convert
-        .locale = "en_US",
+
         // tests assert the full canonical form on purpose: localized output
         // depends on the host's locale data, relative output on the wall clock
         .dateTimeFormat = {.relative = false, .format = numen::DateTimeFormatOptions::TimeFormat::Neutral},
