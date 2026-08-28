@@ -5,6 +5,7 @@
   ninja,
   openssl,
   catch2_3,
+  glibcLocales ? null,
   src ? lib.cleanSource ../.,
   withRepl ? true,
   doCheck ? true,
@@ -22,7 +23,12 @@ stdenv.mkDerivation {
     ninja
   ];
   buildInputs = lib.optionals withRepl [ openssl ];
-  nativeCheckInputs = [ catch2_3 ];
+  nativeCheckInputs = [ catch2_3 ] ++ lib.optionals stdenv.hostPlatform.isLinux [ glibcLocales ];
+
+  # the check sandbox has no locale data of its own
+  env = lib.optionalAttrs (stdenv.hostPlatform.isLinux && glibcLocales != null) {
+    LOCALE_ARCHIVE = "${glibcLocales}/lib/locale/locale-archive";
+  };
 
   cmakeFlags = [
     (lib.cmakeBool "BUILD_SHARED_LIBS" true)
