@@ -47,6 +47,9 @@ include(GNUInstallDirs)
 set(VENDOR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor)
 
 if (MSVC)
+	add_compile_options(/permissive- /Zc:preprocessor /Zc:__cplusplus /bigobj /utf-8 /wd4996)
+	add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
+
 	set(NUMEN_WARNING_OPTIONS /W4)
 	if (NUMEN_HARDENING)
 		set(NUMEN_HARDENING_OPTIONS /sdl /guard:cf)
@@ -182,11 +185,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${VENDOR_DIR})
-
-if (MSVC)
-	add_compile_options(/permissive- /Zc:preprocessor /Zc:__cplusplus /bigobj /utf-8 /wd4996)
-	add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
-endif()
 
 if (BUILD_REPL)
 	set(REPL_TARGET repl)

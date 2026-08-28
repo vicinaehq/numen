@@ -64,7 +64,9 @@ jobs:
       # the locale tests need real locale data, runners only ship C/en_US
       - name: Generate test locales (Linux)
         if: runner.os == 'Linux'
-        run: sudo locale-gen en_US fr_FR de_DE en_IN ja_JP
+        run: |
+          sudo locale-gen en_US fr_FR de_DE en_IN ja_JP.UTF-8
+          locale -a
 
       - name: Install toolchain (macOS)
         if: runner.os == 'macOS'
