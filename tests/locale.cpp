@@ -1,3 +1,4 @@
+#include "helpers.hpp"
 #include "numen/numen.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <locale>
@@ -52,4 +53,28 @@ TEST_CASE("Results render with the locale's separators", GROUP) {
   } else {
     WARN("en_IN.UTF-8 locale not available, skipping");
   }
+}
+
+TEST_CASE("A space grouped number reads back as one number", GROUP) {
+  numen::Numen calc{};
+  auto fr = numen::EvalOptions{.parseOptions = {.locale = "fr_FR"}};
+  auto us = numen::EvalOptions{.parseOptions = {.locale = "en_US"}};
+
+  REQUIRE(calc.evaluate("1 234 567,891", fr) == "1 234 567,891");
+  REQUIRE(calc.evaluate("1\u202f234\u202f567,8", fr) == "1 234 567,8");
+  REQUIRE(calc.evaluate("1\u00a0234 + 1\u2009000", us) == "2,234");
+  REQUIRE(calc.evaluate("1 234 + 1", us) == "1,235");
+  REQUIRE(calc.evaluate("min(1 234; 5)", fr) == "5");
+  REQUIRE(calc.evaluate("min(1 234, 5)", us) == "5");
+
+  REQUIRE(calc.evaluate("1 2", us) == "12");
+  REQUIRE(calc.evaluate("1 23", us) == "123");
+  REQUIRE(calc.evaluate("1 2345", us) == "12,345");
+  REQUIRE(calc.evaluate("1  234", us) == "1,234");
+  REQUIRE(calc.evaluate("1 234e4", us) == "1");
+  REQUIRE(calc.evaluate("1,5 234", fr) == "1,5");
+  REQUIRE(calc.evaluate("1 234,5 678", fr) == "1 234,5");
+
+  auto dt = numen::EvalOptions{.parseOptions = {.locale = "en_US"}, .timezone = test::zone("UTC")};
+  REQUIRE(calc.parse<numen::DateTime>("2026-01-18 12:40", dt));
 }

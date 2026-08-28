@@ -114,6 +114,14 @@ std::optional<double> parseConstant(std::string_view tok) {
   return it->n;
 }
 
+constexpr std::string_view NBSP = "\u00a0";
+constexpr std::string_view FIGURE_SPACE = "\u2007";
+constexpr std::string_view THIN_SPACE = "\u2009";
+constexpr std::string_view NARROW_NBSP = "\u202f";
+
+// what formatted text separates thousands with
+constexpr auto UNICODE_SPACE_SEPS = std::to_array({NBSP, FIGURE_SPACE, THIN_SPACE, NARROW_NBSP});
+
 std::unique_ptr<Expression> makeNumberExpr(numen::Value n) {
   return std::make_unique<Expression>(NumberString{n});
 }
@@ -693,6 +701,32 @@ std::optional<numen::Value> Parser::parseNumber() {
   std::string ns;
   size_t count = 0;
 
+  const auto joinableNumber = [&](const Lexer::Token &tok) {
+    return tok.type == Lexer::TokenType::Number && std::ranges::all_of(tok.raw, [&](char c) {
+             return std::isdigit(static_cast<unsigned char>(c)) != 0 || c == '.' ||
+                    c == m_numpunct.decimal_point();
+           });
+  };
+
+  // space separated number should be glued together so that "150 000" parsed as "150,000"
+  const auto spacedNumberFollows = [&](const Lexer::Token &prev) {
+    const auto isDigit = [](char c) { return std::isdigit(static_cast<unsigned char>(c)) != 0; };
+    if (!std::ranges::all_of(prev.raw, isDigit)) return false;
+
+    auto tok = m_lexer.peak();
+    if (!tok) return false;
+    if (joinableNumber(*tok)) return true;
+
+    if (tok->type == Lexer::TokenType::String && std::ranges::contains(UNICODE_SPACE_SEPS, tok->raw)) {
+      if (auto next = m_lexer.peak(1); next && joinableNumber(*next)) {
+        m_lexer.next();
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   while (true) {
     auto n = m_lexer.peak();
     if (!n || n->type != Lexer::TokenType::Number) break;
@@ -702,6 +736,11 @@ std::optional<numen::Value> Parser::parseNumber() {
     m_lexer.next();
 
     if (!parseDouble(n->raw).whole && count == 0) { return nb.n; }
+
+    if (spacedNumberFollows(*n)) {
+      ++count;
+      continue;
+    }
 
     if (auto tok = m_lexer.peak(); m_inFunction || !tok || tok->raw != CONTEXT_AWARE_THOUSAND_SEP) {
       if (count == 0) return nb.n; // do not bother stringifying, there is only one part so pass the number

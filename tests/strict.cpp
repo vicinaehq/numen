@@ -6,7 +6,10 @@ TEST_CASE("Should reject ill-formed in strict mode") {
   auto opts = numen::EvalOptions{.parseOptions = {.strict = true}};
   auto eval = [&](auto &&str) { return calc.evaluate(str, opts); };
 
-  REQUIRE_FALSE(eval("5 323")); // trailing number with no operator
+  numen::EvalOptions us{.parseOptions = {.strict = true, .locale = "en_US"}};
+  REQUIRE(calc.evaluate("5 323", us) == "5,323");
+  REQUIRE(calc.evaluate("5 32", us) == "532");
+  REQUIRE(calc.evaluate("5  32", us) == "532");
   REQUIRE_FALSE(calc.evaluate("what time is it currently", opts));
   REQUIRE_FALSE(eval("time in ewoeoweiwewo"));
   REQUIRE_FALSE(eval("3 in jan"));
