@@ -4,10 +4,20 @@
 #include <cmath>
 #include <compare>
 #include <limits>
+#include <locale>
 #include <optional>
 #include <string>
 
 namespace numen {
+
+// from the wide numpunct facet: the narrow one truncates multi-byte separators
+struct NumberLocale {
+  std::string decimalPoint = ".";
+  std::string groupSep = ",";
+  std::string grouping = "\3"; // numpunct semantics: sizes right to left, last repeats
+
+  static NumberLocale from(const std::locale &loc);
+};
 
 // Every number is a double, which is the trade numbat makes too: a utility
 // calculator wants boring, predictable arithmetic, and the places a double falls
@@ -48,7 +58,7 @@ public:
   // fixedDecimals caps the fraction where the unit dictates its own precision,
   // as money does
   std::string render(NumberOutputFormat format = NumberOutputFormat::Decimal,
-                     std::optional<int> fixedDecimals = std::nullopt) const;
+                     std::optional<int> fixedDecimals = std::nullopt, const NumberLocale &nloc = {}) const;
 
 private:
   // digits below the radix point are dropped, as the bitwise operators always
@@ -65,7 +75,7 @@ private:
   }
 
   long long shiftCount(const Value &rhs) const;
-  std::string renderDecimal() const;
+  std::string renderDecimal(const NumberLocale &nloc) const;
   std::string renderBase(NumberOutputFormat format) const;
 
   double m_n = 0;

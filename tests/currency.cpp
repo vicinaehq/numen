@@ -167,7 +167,7 @@ TEST_CASE("a sum is as implicit as a literal, only a 'to' pins the currency", "[
   auto calc = test::mockCalc();
   numen::EvalOptions fr{.parseOptions{.locale = "fr_FR"}};
 
-  CHECK(calc.evaluate("100 usd", fr) == "€92.35");
-  CHECK(calc.evaluate("50 usd + 50 usd", fr) == "€92.35");
+  CHECK(calc.evaluate("100 usd", fr) == "€92,35");
+  CHECK(calc.evaluate("50 usd + 50 usd", fr) == "€92,35");
   CHECK(calc.evaluate("(50 usd to usd) + 50 usd", fr) == "$100");
 }

@@ -259,8 +259,8 @@ struct ParseOptions {
   bool strict = false;
 
   /**
-   * Locale to use for implicit conversions. If not specified, the default locale
-   * is used.
+   * Locale to use for implicit conversions, the accepted decimal separator and
+   * the one results are rendered with. If not specified, the default locale is used.
    */
   std::optional<std::string> locale;
 

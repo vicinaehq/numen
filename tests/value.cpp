@@ -62,3 +62,30 @@ TEST_CASE("rendering", "[value]") {
   CHECK(Value{0.223923}.render(numen::NumberOutputFormat::Decimal, 2) == "0.22");
   CHECK(Value{1234.7}.render(numen::NumberOutputFormat::Decimal, 0) == "1,235");
 }
+
+TEST_CASE("grouping follows numpunct rules", "[value]") {
+  constexpr auto DEC = numen::NumberOutputFormat::Decimal;
+  const auto render = [](double n, const numen::NumberLocale &nloc) {
+    return Value{n}.render(DEC, std::nullopt, nloc);
+  };
+
+  // the last size repeats
+  const numen::NumberLocale indian{.decimalPoint = ".", .groupSep = ",", .grouping = "\3\2"};
+  CHECK(render(1234567890123.0, indian) == "12,34,56,78,90,123");
+  CHECK(render(-1234567.5, indian) == "-12,34,567.5");
+  CHECK(render(123, indian) == "123");
+  CHECK(render(1234, indian) == "1,234");
+
+  // CHAR_MAX ends grouping
+  const numen::NumberLocale once{.decimalPoint = ",", .groupSep = ".", .grouping = "\3\x7f"};
+  CHECK(render(1234567890, once) == "1234567.890");
+
+  // a multi byte separator counts as one unit
+  const numen::NumberLocale nbsp{.decimalPoint = ",", .groupSep = "\u00a0", .grouping = "\3"};
+  CHECK(render(1234567.5, nbsp) == "1\u00a0234\u00a0567,5");
+
+  const numen::NumberLocale ungrouped{.decimalPoint = ".", .groupSep = ",", .grouping = ""};
+  CHECK(render(1234567.5, ungrouped) == "1234567.5");
+
+  CHECK(Value{1234567.891}.render(DEC, 2, indian) == "12,34,567.89");
+}

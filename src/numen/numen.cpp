@@ -7,6 +7,7 @@
 #include <exception>
 #include <expected>
 #include <iostream>
+#include <locale>
 #include <memory>
 #include <optional>
 #include <string>
@@ -60,12 +61,12 @@ static std::optional<int> unitDecimals(const detail::Num &v) {
   return std::nullopt;
 }
 
-static ComputedValue toPublic(const detail::Computed &c) {
+static ComputedValue toPublic(const detail::Computed &c, const NumberLocale &nloc) {
   auto out = [&](ValueType v) { return ComputedValue{.value = std::move(v), .conversion = c.conversion}; };
 
   if (auto n = c.asNumber()) {
     return out(Number{.n = n->n.toDouble(),
-                      .text = n->n.render(n->format, unitDecimals(*n)),
+                      .text = n->n.render(n->format, unitDecimals(*n), nloc),
                       .format = n->format,
                       .unit = n->unit,
                       .isPercentage = n->isPercentage});
@@ -79,7 +80,9 @@ std::expected<ComputedValue, std::string> Numen::compute(std::string_view expr, 
   try {
     Parser parser{expr, m_unitDb, opts.parseOptions};
     auto ast = parser.parse();
-    return toPublic(interpret(*ast.root, m_unitDb, opts));
+
+    return toPublic(interpret(*ast.root, m_unitDb, opts),
+                    NumberLocale::from(opts.parseOptions.effectiveLocale()));
   } catch (const std::exception &e) { return std::unexpected(e.what()); }
 }
 

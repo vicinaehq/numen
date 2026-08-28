@@ -714,6 +714,8 @@ std::optional<numen::Value> Parser::parseNumber() {
 
   if (ns.empty()) return std::nullopt;
 
+  // the fraction may carry the locale's delimiter; parseDouble reads the classic one
+  std::ranges::replace(ns, m_numpunct.decimal_point(), '.');
   return parseDouble(ns).value;
 }
 
