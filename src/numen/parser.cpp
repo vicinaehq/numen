@@ -2,6 +2,7 @@
 #include "numen/numen.hpp"
 #include "numen/unit.hpp"
 #include "timezone.hpp"
+#include <iostream>
 #include <ranges>
 #include "utils.hpp"
 #include <algorithm>
@@ -828,9 +829,7 @@ std::unique_ptr<Expression> Parser::parseTerm() {
         m_lexer.next();
 
         FunctionCall fn{.name = name->raw};
-
         constexpr auto unterminated = "Expected ) to close the argument list";
-        const auto functionDelim = m_numpunct.decimal_point() == ',' ? ";" : ",";
 
         m_inFunction = true;
 
@@ -841,7 +840,9 @@ std::unique_ptr<Expression> Parser::parseTerm() {
 
           auto sep = m_lexer.peakOrThrow(unterminated);
           if (sep.raw == ")") { break; }
-          if (sep.raw != functionDelim) { throw std::runtime_error("Expected , to add another argument"); }
+          if (!isFunctionParameterSeparator(sep.raw)) {
+            throw std::runtime_error("Expected , to add another argument");
+          }
 
           m_lexer.next();
         }
@@ -1006,7 +1007,9 @@ std::unique_ptr<Expression> Parser::pratParse(int minPrec) {
         }
       }
 
-      if (tok->raw == "(" || tok->raw == ")" || tok->raw == "," || parseConstant(tok->raw)) break;
+      if (tok->raw == "(" || tok->raw == ")" || isFunctionParameterSeparator(tok->raw) ||
+          parseConstant(tok->raw))
+        break;
       if (m_opts.strict) throw std::runtime_error(std::format("Unknown token: {}", tok->raw));
 
       m_lexer.next();
@@ -1015,4 +1018,8 @@ std::unique_ptr<Expression> Parser::pratParse(int minPrec) {
   }
 
   return left;
+}
+
+bool Parser::isFunctionParameterSeparator(std::string_view tok) const {
+  return ((m_numpunct.decimal_point() != ',' && tok == ",") || tok == ";");
 }

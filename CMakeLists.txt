@@ -245,6 +245,7 @@ if (BUILD_TESTS)
 		tests/conversion.cpp
 		tests/value.cpp
 		tests/strict.cpp
+		tests/locale.cpp
 	)
 	target_compile_definitions(${TEST_TARGET} PRIVATE CORPUS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/corpus")
 

@@ -265,7 +265,7 @@ struct ParseOptions {
   std::optional<std::string> locale;
 
   std::locale effectiveLocale() const {
-    return locale.transform([](auto &&str) { return std::locale{str}; }).value_or(std::locale::classic());
+    return locale.transform([](auto &&str) { return std::locale{str}; }).value_or(std::locale{""});
   }
 };
 
