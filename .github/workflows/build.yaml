@@ -66,6 +66,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo locale-gen en_US fr_FR de_DE en_IN ja_JP.UTF-8
+          sudo localedef -i ja_JP -f UTF-8 ja_JP || true
           locale -a
 
       - name: Install toolchain (macOS)
