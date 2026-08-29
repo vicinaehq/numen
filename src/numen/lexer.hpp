@@ -16,18 +16,29 @@ public:
     unsigned fromBase = 10;
   };
 
-  enum class OperatorType { Add, Subtract, Multiply, Divide, Pow };
-  enum class State { Reset, Number, Operator, NumberBase, NumberExponentSign, NumberExponent, String };
-  enum class TokenType { String, Number, Operator };
+  enum class State {
+    Reset,
+    Number,
+    Operator,
+    NumberBase,
+    NumberExponentSign,
+    NumberExponent,
+    String,
+    StringLiteral
+  };
+  enum class TokenType { String, StringLiteral, Number, Operator };
 
   struct String {
+    std::string_view data;
+  };
+  struct StringLiteral {
     std::string_view data;
   };
   struct Operator {
     std::string_view op;
   };
 
-  using TokenData = std::variant<Number, String, Operator>;
+  using TokenData = std::variant<Number, String, StringLiteral, Operator>;
 
   struct Token {
     std::string_view raw;

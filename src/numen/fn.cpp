@@ -1,7 +1,9 @@
 #include "fn.hpp"
 #include "computed.hpp"
 #include "numen/numen.hpp"
+#include "utils.hpp"
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <format>
@@ -333,6 +335,26 @@ FunctionDatabase makeBuiltin() {
       });
     });
   }
+
+  db.addConverter("upper", [](const FunctionCtx &ctx) {
+    ctx.expectArgs(1);
+    if (auto str = ctx.args.front().asStr()) {
+      std::string out = *str;
+      upperCase(out);
+      return Computed{out};
+    }
+    throw std::runtime_error("Invalid type");
+  });
+
+  db.addConverter("lower", [](const FunctionCtx &ctx) {
+    ctx.expectArgs(1);
+    if (auto str = ctx.args.front().asStr()) {
+      std::string out = *str;
+      lowerCase(out);
+      return Computed{out};
+    }
+    throw std::runtime_error("Invalid type");
+  });
 
   db.addConverter("json", [](const FunctionCtx &ctx) {
     ctx.expectArgs(1);

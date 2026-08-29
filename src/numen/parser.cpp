@@ -777,6 +777,9 @@ std::unique_ptr<Expression> Parser::parseTerm() {
   auto frontUnit = parseUnit();
 
   if (auto tok = m_lexer.peak()) {
+    if (tok->type == Lexer::TokenType::StringLiteral) {
+      return std::make_unique<Expression>(StringLiteral{tok->raw});
+    }
 
     if (auto constant = parseConstant(tok->raw)) {
       m_lexer.next();

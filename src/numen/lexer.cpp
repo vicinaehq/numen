@@ -71,6 +71,8 @@ std::optional<Lexer::Token> Lexer::next() {
     }
     case State::String:
       return makeToken(TokenType::String, String{.data = getSelection()});
+    case State::StringLiteral:
+      return makeToken(TokenType::StringLiteral, StringLiteral{.data = getSelection()});
     case State::Operator:
       return makeToken(TokenType::Operator, Operator{getSelection()});
     default:
@@ -92,6 +94,11 @@ std::optional<Lexer::Token> Lexer::next() {
         continue;
       }
       if (isSpace(c)) {
+        startPos += 1;
+        break;
+      }
+      if (c == '"') {
+        state = State::StringLiteral;
         startPos += 1;
         break;
       }
@@ -196,6 +203,16 @@ std::optional<Lexer::Token> Lexer::next() {
       // digits end a word ("2m10s") unless the word is being called ("log10(x)")
       if (isDigit(c) && isCalled(m_cursor)) break;
       return tryCommit();
+    }
+    case State::StringLiteral: {
+      if (c == '"') {
+        auto tok = tryCommit();
+        ++m_cursor;
+        return tok;
+      }
+
+      // TODO: implement escaping
+      break;
     }
     }
 

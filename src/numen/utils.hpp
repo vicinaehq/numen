@@ -14,3 +14,7 @@ inline bool equalsIgnoreCase(const auto &a, const auto &b) {
 inline void lowerCase(std::string &s) {
   std::ranges::transform(s, s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 }
+
+inline void upperCase(std::string &s) {
+  std::ranges::transform(s, s.begin(), [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+}

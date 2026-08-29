@@ -201,6 +201,8 @@ public:
         throw std::runtime_error(std::format("Cannot convert a {} to that", v.valueTypeName()));
       } else if constexpr (std::is_same_v<T, NumberString>) {
         return Computed{.value = Num{value}};
+      } else if constexpr (std::is_same_v<T, StringLiteral>) {
+        return Computed{.value = std::string{value.data}};
       } else if constexpr (std::is_same_v<T, PostfixExpression>) {
         auto lhs = computeExpr(*value.lhs);
         if (auto n = lhs.asNumber(); n && value.op == "k") { n->n = n->n.toDouble() * 1e3; }

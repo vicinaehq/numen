@@ -130,9 +130,13 @@ struct PercentExpression {
   std::unique_ptr<Expression> expr;
 };
 
+struct StringLiteral {
+  std::string_view data;
+};
+
 struct Expression {
   std::variant<BinaryExpression, UnaryExpression, PostfixExpression, NumberString, DateString, UnitExpression,
-               ConversionExpression, Duration, FunctionCall, PercentExpression>
+               ConversionExpression, StringLiteral, Duration, FunctionCall, PercentExpression>
       data;
 
   const BinaryExpression *asBinaryExpression() const { return as<BinaryExpression>(); }
