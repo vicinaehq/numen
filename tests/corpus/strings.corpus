@@ -1,0 +1,42 @@
+# string literals: both quote styles delimit text, backslash escapes the next character
+
+"hello world"        => hello world
+'hello world'        => hello world
+"mixed 'quotes'"     => mixed 'quotes'
+'mixed "quotes"'     => mixed "quotes"
+
+# escaping strips the backslash and keeps the next character as is
+"say \"hi\""         => say "hi"
+'it\'s'              => it's
+"back\\slash"        => back\slash
+"\q\w"               => qw
+
+# no special escape sequences
+"line\nline"         => linenline
+"tab\there"          => tabthere
+
+# quotes shield text that would otherwise mean something
+"km"                 => km
+'pi'                 => pi
+"e"                  => e
+"123"                => 123
+"1 + 1"              => 1 + 1
+'now'                => now
+"12:30"              => 12:30
+
+# converters work on strings, in both forms
+'hello' to upper     => HELLO
+upper('hello')       => HELLO
+"HeLLo" to lower     => hello
+lower("HeLLo")       => hello
+
+# strings do not mix with numbers
+"abc" + 1            => !error Cannot add Number to Text
+1 + "abc"            => !error Cannot add Text to Number
+2 * "abc"            => !error Invalid operands: Number and Text
+"abc" + "def"        => !error Cannot add Text to Text
+
+# a literal still being typed is committed as is
+"unfinished          => unfinished
+'unfinished          => unfinished
+"trailing\           => trailing

@@ -211,7 +211,8 @@ template <class T> struct ConversionOf {
 };
 
 struct Conversion {
-  std::variant<ConversionOf<Number::Unit>, ConversionOf<Timezone>> sides;
+  // the string alternative names the converter that ran, e.g. "upper"
+  std::variant<ConversionOf<Number::Unit>, ConversionOf<Timezone>, ConversionOf<std::string>> sides;
 
   // locale currency conversion
   bool implicit = false;

@@ -773,14 +773,15 @@ std::unique_ptr<Expression> Parser::parseTerm() {
     throw std::runtime_error("Expected EOF, looks like there is nothing we can parse!");
   }
 
+  if (auto str = m_lexer.peakAs<Lexer::StringLiteral>()) {
+    m_lexer.next();
+    return std::make_unique<Expression>(StringLiteral{std::move(str->data)});
+  }
+
   auto expr = std::unique_ptr<Expression>();
   auto frontUnit = parseUnit();
 
   if (auto tok = m_lexer.peak()) {
-    if (tok->type == Lexer::TokenType::StringLiteral) {
-      return std::make_unique<Expression>(StringLiteral{tok->raw});
-    }
-
     if (auto constant = parseConstant(tok->raw)) {
       m_lexer.next();
 

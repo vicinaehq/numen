@@ -812,6 +812,11 @@ private:
 
     auto r = (*handler)(FunctionCtx{.name = fn.name, .args = computedArgs});
     r.explicitlyConverted = std::ranges::any_of(computedArgs, &Computed::explicitlyConverted);
+
+    if (std::ranges::contains(FunctionDatabase::builtin().converterNames(), fn.name)) {
+      r.conversion = Conversion{.sides = ConversionOf<std::string>{.to = std::string{fn.name}}};
+    }
+
     return r;
   }
 

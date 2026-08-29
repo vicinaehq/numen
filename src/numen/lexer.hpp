@@ -32,7 +32,8 @@ public:
     std::string_view data;
   };
   struct StringLiteral {
-    std::string_view data;
+    // not a view, because of escaping
+    std::string data;
   };
   struct Operator {
     std::string_view op;
@@ -46,6 +47,9 @@ public:
     TokenData data;
     std::string_view::size_type start = 0;
     std::string_view::size_type end = 0;
+
+    template <typename T> T *as() { return std::get_if<T>(&data); }
+    template <typename T> const T *as() const { return std::get_if<T>(&data); }
 
     bool isAdjacent(const Token &rhs) const { return end == rhs.start; }
 

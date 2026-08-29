@@ -131,7 +131,7 @@ struct PercentExpression {
 };
 
 struct StringLiteral {
-  std::string_view data;
+  std::string data;
 };
 
 struct Expression {
