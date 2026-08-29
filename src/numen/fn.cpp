@@ -366,11 +366,6 @@ FunctionDatabase makeBuiltin() {
 
           if constexpr (std::is_same_v<T, DateTime>) {
             return Computed{value.toRFC3339()};
-          }
-
-          // FIXME: technically {:?} is not the same as JSON escaping (I'm pretty sure)
-          else if constexpr (std::is_same_v<T, std::string>) {
-            return Computed{std::format("{:?}", value)};
           } else if constexpr (std::is_same_v<T, Num>) {
             return Computed{value};
           } else {
