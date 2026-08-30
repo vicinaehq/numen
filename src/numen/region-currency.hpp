@@ -14,8 +14,7 @@ std::optional<std::string_view> currencyForRegion(std::string_view region);
  */
 std::optional<std::string_view> currencyForLocale(std::string_view locale);
 
-// LC_ALL, LC_MONETARY, LANG on POSIX (empty when unset, as in gui processes
-// on macOS); the user default locale on Windows
+// LC_ALL, LC_MONETARY, LANG on POSIX, falling back to systemLocaleName()
 std::string monetaryLocale();
 
 } // namespace numen

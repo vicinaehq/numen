@@ -181,20 +181,6 @@ std::string Timezone::toString() const {
   return out;
 }
 
-// a locale name from config may not exist on the host: fall back rather than throw
-static std::locale resolveLocale(const std::optional<std::string> &name) {
-  if (name) {
-    for (const auto &candidate : {*name, *name + ".UTF-8"}) {
-      try {
-        return std::locale{candidate};
-      } catch (const std::runtime_error &) {} // NOLINT(bugprone-empty-catch)
-    }
-  }
-  try {
-    return std::locale{""};
-  } catch (const std::runtime_error &) { return std::locale::classic(); }
-}
-
 std::string DateTime::toRFC3339() const {
   // discard subsecond
   const auto tp = std::chrono::time_point_cast<std::chrono::seconds>(time);

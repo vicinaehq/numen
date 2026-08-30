@@ -118,6 +118,7 @@ set(NUMEN_SRCS
 	src/numen/fn.cpp
 	src/numen/interpreter.cpp
 	src/numen/lexer.cpp
+	src/numen/locale.cpp
 	src/numen/parser.cpp
 	src/numen/region-currency.cpp
 	src/numen/timezone.cpp
@@ -135,6 +136,10 @@ endif()
 
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 numen_harden(${PROJECT_NAME})
+
+if (APPLE)
+	target_link_libraries(${PROJECT_NAME} PUBLIC "-framework CoreFoundation")
+endif()
 
 if (NUMEN_USE_DATE_TZ)
 	set(DATE_DIR ${VENDOR_DIR}/date)

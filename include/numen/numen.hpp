@@ -5,6 +5,7 @@
 #include <compare>
 #include <expected>
 #include <format>
+#include <locale>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -263,19 +264,23 @@ struct ComputedValue {
   std::string toString(const DateTimeFormatOptions &dateTimeFormat = {}) const;
 };
 
+/**
+ * Resolve an optional locale name to a std::locale, never throwing:
+ * unresolvable or missing names fall back to the system locale, then "C".
+ */
+std::locale resolveLocale(const std::optional<std::string> &name = std::nullopt);
+
 struct ParseOptions {
   // return an error if an unknown token is encountered, instead of skipping it.
   bool strict = false;
 
   /**
    * Locale to use for implicit conversions, the accepted decimal separator and
-   * the one results are rendered with. If not specified, the default locale is used.
+   * the one results are rendered with. If not specified, the system locale is used.
    */
   std::optional<std::string> locale;
 
-  std::locale effectiveLocale() const {
-    return locale.transform([](auto &&str) { return std::locale{str}; }).value_or(std::locale{""});
-  }
+  std::locale effectiveLocale() const { return resolveLocale(locale); }
 };
 
 struct EvalOptions {

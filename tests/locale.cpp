@@ -16,6 +16,25 @@ bool available(const char *name) {
 
 } // namespace
 
+TEST_CASE("Locale resolution never throws", GROUP) {
+  REQUIRE_NOTHROW(numen::resolveLocale("xx_XX.bogus"));
+  REQUIRE_NOTHROW(numen::resolveLocale("not a locale at all"));
+  REQUIRE_NOTHROW(numen::resolveLocale(""));
+  REQUIRE_NOTHROW(numen::resolveLocale());
+
+  numen::Numen calc{};
+  auto opts = numen::EvalOptions{.parseOptions = {.locale = "xx_XX.bogus"}};
+  REQUIRE(calc.evaluate("1 + 1", opts) == "2");
+}
+
+TEST_CASE("Bare locale names resolve on codeset-indexed hosts", GROUP) {
+  if (available("fr_FR.UTF-8")) {
+    REQUIRE(numen::resolveLocale("fr_FR").name() != "C");
+  } else {
+    WARN("fr_FR.UTF-8 locale not available, skipping");
+  }
+}
+
 TEST_CASE("Local decimal separator should be accepted", GROUP) {
   numen::Numen calc{};
   auto opts = numen::EvalOptions{.parseOptions = {.locale = "fr_FR"}};
