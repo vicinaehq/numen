@@ -7,7 +7,7 @@
 #include <iostream>
 #include <thread>
 #include "nlohmann/json.hpp"
-#include "httplib/httplib.h"
+#include "http-get.hpp"
 #include "numen/abstract-currency-provider.hpp"
 #include "numen/env.hpp"
 #include "vicinae-currency-provider.hpp"
@@ -99,20 +99,19 @@ void VicinaeCurrencyProvider::fetchRates() {
   if (m_worker.joinable()) m_worker.join(); // a previous fetch still in flight: let it land first
 
   m_worker = std::jthread{[this]() {
-    httplib::Client client{"https://api.vicinae.com"};
-    auto res = client.Get("/v1/currencies");
+    auto res = httpGet("https://api.vicinae.com", "/v1/currencies");
 
     if (!res) {
       std::cerr << "VicinaeCurrencyProvider: failed to fetch rates: " << res.error() << "\n";
       return;
     }
 
-    if (loadRates(res->body)) {
+    if (loadRates(*res)) {
       {
         const std::scoped_lock lock{m_mut};
         m_lastFetchedAt = std::chrono::system_clock::now();
       }
-      persistOnDisk(persistPath(), res->body);
+      persistOnDisk(persistPath(), *res);
     }
   }};
 }

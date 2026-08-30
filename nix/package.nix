@@ -3,13 +3,13 @@
   stdenv,
   cmake,
   ninja,
-  openssl,
+  curl,
   replxx,
   catch2_3,
   glibcLocales ? null,
   src ? lib.cleanSource ../.,
   withRepl ? true,
-  withReplCurrencyProvider ? !stdenv.hostPlatform.isDarwin,
+  withReplCurrencyProvider ? true,
   doCheck ? !stdenv.hostPlatform.isDarwin,
 }:
 stdenv.mkDerivation {
@@ -24,10 +24,9 @@ stdenv.mkDerivation {
     cmake
     ninja
   ];
-  buildInputs = lib.optionals withRepl [
-    openssl
-    replxx
-  ];
+  buildInputs =
+    lib.optionals withRepl [ replxx ]
+    ++ lib.optionals (withRepl && withReplCurrencyProvider) [ curl ];
   nativeCheckInputs = [ catch2_3 ] ++ lib.optionals stdenv.hostPlatform.isLinux [ glibcLocales ];
 
   # the check sandbox has no locale data of its own

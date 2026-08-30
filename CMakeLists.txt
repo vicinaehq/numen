@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(BUILD_REPL "Build the simple repl program" OFF)
-option(BUILD_REPL_CURRENCY_PROVIDER "Build the built-in REPL currency provider (uses api.vicinae.com). Adds a runtime dependency on OpenSSL to run the REPL." ON)
+option(BUILD_REPL_CURRENCY_PROVIDER "Build the built-in REPL currency provider (uses api.vicinae.com). Uses libcurl on Unix, WinHTTP on Windows." ON)
 
 option(BUILD_TESTS "Build the test suite" OFF)
 
@@ -217,15 +217,19 @@ if (BUILD_REPL)
 	set(LINK_LIBS replxx::replxx)
 
 	if (BUILD_REPL_CURRENCY_PROVIDER)
-		find_package(OpenSSL REQUIRED)
-		add_compile_definitions(CPPHTTPLIB_OPENSSL_SUPPORT=1)
 		add_compile_definitions(BUILD_CURRENCY_PROVIDER=1)
 		list(APPEND SRCS
 			src/repl/vicinae-currency-provider.cpp
 		)
-		list(APPEND LINK_LIBS
-			OpenSSL::SSL OpenSSL::Crypto
-		)
+		if (WIN32)
+			list(APPEND SRCS src/repl/http-get-winhttp.cpp)
+			list(APPEND LINK_LIBS winhttp)
+		else()
+			# system libcurl: API on macOS (SDK headers + stubs), ubiquitous on Linux
+			find_package(CURL REQUIRED)
+			list(APPEND SRCS src/repl/http-get-curl.cpp)
+			list(APPEND LINK_LIBS CURL::libcurl)
+		endif()
 	endif()
 
 	add_executable(${REPL_TARGET} ${SRCS})
