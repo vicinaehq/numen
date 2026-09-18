@@ -180,9 +180,9 @@ std::optional<Lexer::Token> Lexer::next() {
       break;
     }
     case State::Operator: {
-      if (m_cursor - startPos == 0) {
+      // none of these take part in a multi-char operator
+      constexpr auto isStandalone = [](char c) {
         switch (c) {
-        // none of these take part in a multi-char operator
         case '(':
         case ')':
         case '-':
@@ -192,11 +192,16 @@ std::optional<Lexer::Token> Lexer::next() {
         case '/':
         case '%':
         case ';':
-          ++m_cursor;
-          return tryCommit();
+          return true;
         default:
-          break;
+          return false;
         }
+      };
+
+      // a continuation commits too: '*(' is two tokens, not one unknown token
+      if (isStandalone(c)) {
+        if (m_cursor - startPos == 0) { ++m_cursor; }
+        return tryCommit();
       }
 
       if (isAlnum(c) || isSpace(c)) { return tryCommit(); }
