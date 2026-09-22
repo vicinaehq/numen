@@ -30,18 +30,14 @@ Duration subtractDates(const DateTime &lhs, const DateTime &rhs) {
   auto btod = rhs.time - rhsDays;
 
   auto m = (bmd.year() / bmd.month()) - (amd.year() / amd.month()); // chrono::months, exact
-  if (bmd.day() < amd.day()) --m;                                   // last month isn't complete yet
 
-  auto anchor = amd + m; // same clamped month-shift you already have
-  if (!anchor.ok()) anchor = anchor.year() / anchor.month() / last;
+  if (bmd.day() < amd.day() || (bmd.day() == amd.day() && btod < atod)) --m;
 
-  auto d = sys_days{bmd} - sys_days{anchor}; // exact leftover days
+  auto anchor = shift(lhs.time, m);
 
+  const seconds secs = duration_cast<seconds>(rhs.time - anchor);
   auto y = m / 12;
   auto mo = m % 12;
-
-  const seconds secs =
-      duration_cast<seconds>(days{d}) - seconds{std::abs(duration_cast<seconds>(atod - btod).count())};
 
   return Duration{.years = std::chrono::years{std::abs(y.count())},
                   .months = std::chrono::months{std::abs(mo.count())},
