@@ -241,3 +241,12 @@ now to km                    => !error Cannot convert a DateTime to km
 
 # known bugs
 jan 18th 09:00 - jan 20th 10:00 to hours	=> 49h
+
+# until expr
+until 2026-01-18 01:00:00					=> 1 hr
+until 2026-01-19 02:00:00					=> 1 day 2 hr
+until 2026-02-23 00:00:00					=> 1 month 5 days
+until dec 25								=> 11 months 1 week
+until 5 am									=> 5 hr
+time until 5 am								=> 5 hr
+seconds until 5 am to hours					=> 5h

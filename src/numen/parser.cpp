@@ -768,6 +768,36 @@ std::optional<numen::Value> Parser::parseNumber() {
   return parseDouble(ns).value;
 }
 
+std::unique_ptr<Expression> Parser::parseUntil() {
+  // allow using "<unit|'time'> until ..." and "until ..."
+  auto first = m_lexer.peak(0);
+  auto second = m_lexer.peak(1);
+  const bool untilFirst = equalsIgnoreCase(first->raw, "until");
+
+  if (!first || (!second && !untilFirst)) return nullptr;
+  if (first->type != Lexer::TokenType::String) return nullptr;
+
+  if (!untilFirst) {
+    if (second->type != Lexer::TokenType::String) return nullptr;
+    if (!equalsIgnoreCase(second->raw, "until")) return nullptr;
+  }
+
+  std::optional<NamedUnit> unit;
+
+  if (!untilFirst && !equalsIgnoreCase(first->raw, "time")) {
+    auto candidates = m_unitDb.findUnitCandidates(first->raw);
+    const bool isDuration = std::ranges::any_of(
+            candidates, [](const UnitDef &def) { return def.dimension == dimensions::DURATION; });
+
+    if (!isDuration) return nullptr;
+    unit = NamedUnit{ .terms = { NamedUnitTerm{ .name = first->raw }}};
+  }
+  m_lexer.advance(untilFirst ? 1 : 2);
+  auto target = pratParse(1);
+
+  return std::make_unique<Expression>(UntilExpression{ .unit = std::move(unit), .target = std::move(target)});
+}
+
 std::unique_ptr<Expression> Parser::parseTerm() {
   if (!m_lexer.peak()) {
     throw std::runtime_error("Expected EOF, looks like there is nothing we can parse!");
@@ -777,6 +807,7 @@ std::unique_ptr<Expression> Parser::parseTerm() {
     m_lexer.next();
     return std::make_unique<Expression>(StringLiteral{std::move(str->data)});
   }
+  if (auto until = parseUntil()) return until;
 
   auto expr = std::unique_ptr<Expression>();
   auto frontUnit = parseUnit();
