@@ -12,8 +12,6 @@
 #include <cstdint>
 #include <format>
 #include <initializer_list>
-#include <iostream>
-#include <numbers>
 #include <optional>
 #include <ranges>
 #include <stdexcept>
@@ -230,6 +228,8 @@ public:
         return executeFunction(value);
       } else if constexpr (std::is_same_v<T, Duration>) {
         return {value};
+      } else if constexpr (std::is_same_v<T, UntilExpression>) {
+        return computeUntil(value);
       } else {
         static_assert(std::is_same_v<T, DateString>);
         const auto &ds = value;
@@ -275,6 +275,46 @@ public:
   }
 
 private:
+  DateTime nextOccurence(const Expression &target, DateTime dt) const {
+    auto ds = std::get_if<DateString>(&target.data);
+
+    if (dt.time >= m_now) return dt;
+    if (!ds) return dt;
+
+    auto literal = std::get_if<DateTimeLiteral>(&ds->value);
+
+    if (!literal) return dt;
+
+    if (literal->year && dt.time <= m_now) return dt;
+    if (!literal->year && !literal->month) {
+      dt.time += std::chrono::days{1};
+      return dt;
+    }
+    dt.time = shift(dt.time, std::chrono::years{1});
+    return dt;
+  }
+
+  Computed computeUntil(const UntilExpression &until) const {
+    auto target = computeExpr(*until.target);
+    auto dt = target.asDateTime();
+
+    if (!dt) throw std::runtime_error(std::format("Cannot compute `until {}`", target.valueTypeName()));
+
+    const auto when = nextOccurence(*until.target, *dt);
+
+    if (when.time < m_now)
+      throw std::runtime_error("Using until to compute past dates is disallowed, use normal arithmetic");
+    if (!until.unit) {
+      const DateTime now{ .time = m_now, .tz = when.tz, .offset = when.offset };
+
+      return Computed{ subtractDates(now, when) };
+    }
+
+    const std::chrono::duration<double> secs = when.time - m_now;
+
+    return stampUnit(target, convertToUnit(secs.count(), "second", until.unit->simpleName()));
+  }
+
   std::optional<Duration> foldToDuration(const Num &n) const {
     if (!n.unit) return std::nullopt;
 

@@ -134,9 +134,14 @@ struct StringLiteral {
   std::string data;
 };
 
+struct UntilExpression {
+  std::optional<NamedUnit> unit;
+  std::unique_ptr<Expression> target;
+};
+
 struct Expression {
   std::variant<BinaryExpression, UnaryExpression, PostfixExpression, NumberString, DateString, UnitExpression,
-               ConversionExpression, StringLiteral, Duration, FunctionCall, PercentExpression>
+               ConversionExpression, StringLiteral, Duration, FunctionCall, PercentExpression, UntilExpression>
       data;
 
   const BinaryExpression *asBinaryExpression() const { return as<BinaryExpression>(); }
@@ -167,6 +172,7 @@ struct Expression {
           if constexpr (std::is_same_v<U, ConversionExpression>) { return node.lhs->template contains<T>(); }
           if constexpr (std::is_same_v<U, UnitExpression>) { return node.expr->template contains<T>(); }
           if constexpr (std::is_same_v<U, PercentExpression>) { return node.expr->template contains<T>(); }
+          if constexpr (std::is_same_v<U, UntilExpression>) { return node.target->template contains<T>(); }
           return false;
         },
         data);
@@ -196,6 +202,7 @@ public:
   std::optional<RelativeDateTimeLiteral> parseRelativeDateTimeLiteral();
   std::optional<DateString> parseRFC3339();
 
+
   std::optional<std::chrono::seconds> parseTimezoneOffset();
 
   template <typename F> std::optional<std::string_view> greedyParse(int n, F fn) {
@@ -221,6 +228,7 @@ protected:
   std::unique_ptr<Expression> pratParse(int minPrec = 0);
   std::unique_ptr<Expression> parseMul() { return pratParse(4); }
   std::optional<numen::Value> parseNumber();
+  std::unique_ptr<Expression> parseUntil();
   bool isFunctionParameterSeparator(std::string_view tok) const;
 
 private:
