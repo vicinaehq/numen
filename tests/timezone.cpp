@@ -117,6 +117,30 @@ TEST_CASE("resolve custom tz link", TAG) {
     REQUIRE(tz);
     CHECK(tz->name() == "America/New_York");
   }
+
+  {
+    auto tz = db.query("PT");
+    REQUIRE(tz);
+    CHECK(tz->name() == "America/Los_Angeles");
+  }
+
+  {
+    auto tz = db.query("MT");
+    REQUIRE(tz);
+    CHECK(tz->name() == "America/Denver");
+  }
+
+  {
+    auto tz = db.query("CT");
+    REQUIRE(tz);
+    CHECK(tz->name() == "America/Chicago");
+  }
+
+  {
+    auto tz = db.query("ET");
+    REQUIRE(tz);
+    CHECK(tz->name() == "America/New_York");
+  }
 }
 
 TEST_CASE("resolve places from the geo database", TAG) {
