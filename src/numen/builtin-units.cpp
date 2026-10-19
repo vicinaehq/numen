@@ -165,7 +165,7 @@ std::span<const UnitDef> units::builtins() {
     {.id = "nok", .aliases = {"krone", "kroner"},                            .name = "Norwegian Krone",                          .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 2},
     {.id = "dkk", .aliases = {},                                             .name = "Danish Krone",                             .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 2},
     {.id = "pln", .aliases = {"zloty"},                     .symbol = "zł",  .name = "Polish Zloty",       .symbolPrefix = true, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 2},
-    {.id = "czk", .aliases = {"koruna"},                    .symbol = "Kč",  .name = "Czech Koruna",       .symbolPrefix = true, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 2},
+    {.id = "czk", .aliases = {"koruna"},                    .symbol = " Kč", .name = "Czech Koruna",                             .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 2},
 
 	// huf instead of Ft to not conflict with "foot". We may need a better way to solve this.
     {.id = "huf", .aliases = {"forint"},                                     .name = "Hungarian Forint",                         .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0},
