@@ -143,3 +143,27 @@ nrt(27, 3)					=> 3
 nrt(128, 7)					=> 2
 nrt(256, 8)					=> 2
 nrt(2, 1)					=> 2
+
+# finance: rate of return on investment
+rri(2, 100, 121)            => 0.1
+rri(10, 100, 200)           => 0.071773
+rri(1, 100, 50)             => -0.5
+rri(5, 100, 100)            => 0
+RRI(2, 100, 121)            => 0.1
+rri(2, 100)                 => !error rri: expected at least 3 arguments, got 2
+
+# finance: effective annual rate
+effect(0.1, 1)              => 0.1
+effect(0.05, 12)            => 0.051162
+effect(0.12, 4)             => 0.125509
+effect(5%, 12)              => 0.051162
+EFFECT(0.1, 2)              => 0.1025
+effect(0.05)                => !error effect: expected at least 2 arguments, got 1
+
+# finance: nominal annual rate
+nominal(0.1, 1)             => 0.1
+nominal(0.21, 2)            => 0.2
+nominal(0.125509, 4)        => 0.12
+nominal(effect(0.05, 12), 12) => 0.05
+Nominal(0.1025, 2)          => 0.1
+nominal(0.05)               => !error nominal: expected at least 2 arguments, got 1
