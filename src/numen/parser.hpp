@@ -228,6 +228,7 @@ protected:
   std::unique_ptr<Expression> pratParse(int minPrec = 0);
   std::unique_ptr<Expression> parseMul() { return pratParse(4); }
   std::optional<numen::Value> parseNumber();
+  std::unique_ptr<Expression> parsePrimes(std::unique_ptr<Expression> major);
   std::unique_ptr<Expression> parseUntil();
   bool isFunctionParameterSeparator(std::string_view tok) const;
 
