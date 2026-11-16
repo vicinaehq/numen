@@ -881,7 +881,8 @@ std::unique_ptr<Expression> Parser::parseTerm() {
     m_lexer.next();
     expr = pratParse();
 
-    if (auto close = m_lexer.peak(); !close || close->raw != ")") {
+    // like an argument list, a group left open at the end of the input is closed implicitly
+    if (auto close = m_lexer.peak(); close && close->raw != ")") {
       throw std::runtime_error("Expected ) to close the group");
     }
     m_lexer.next();
@@ -1093,6 +1094,8 @@ std::unique_ptr<Expression> Parser::pratParse(int minPrec) {
     if (it != operators().end()) {
       if (it->precedence < minPrec) break;
       m_lexer.next();
+      // "2 +" is still being typed: drop the operator rather than fail
+      if (!m_lexer.peak()) break;
       auto right = pratParse(it->rightAssociative ? it->precedence : it->precedence + 1);
       left = makeBinExpr(std::move(left), std::move(right), std::string{it->id});
     } else {
