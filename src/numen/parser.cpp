@@ -260,6 +260,31 @@ std::optional<NamedUnit> Parser::parseConversionTarget() {
   return target;
 }
 
+// 5'10" is 5' + 10", and the closing mark can be left off as in 5'10. the lexer
+// only reads a quote as a prime mark when it is glued to a number
+std::unique_ptr<Expression> Parser::parsePrimes(std::unique_ptr<Expression> major) {
+  const auto isMark = [](const std::optional<Lexer::Token> &tok, std::string_view mark) {
+    return tok && tok->type == Lexer::TokenType::String && tok->raw == mark;
+  };
+
+  auto mark = m_lexer.peak();
+  if (!isMark(mark, "'") && !isMark(mark, "\"")) return major;
+  m_lexer.next();
+
+  auto expr = makeUnit(std::move(major), NamedUnit{.terms = {NamedUnitTerm{.name = mark->raw}}});
+  if (mark->raw != "'") return expr;
+
+  auto minor = m_lexer.peakIf(Lexer::TokenType::Number);
+  if (!minor || !mark->isAdjacent(*minor)) return expr;
+  m_lexer.next();
+
+  if (isMark(m_lexer.peak(), "\"")) m_lexer.next();
+
+  auto rhs =
+      makeUnit(makeNumberExpr(minor->asNumber()->n), NamedUnit{.terms = {NamedUnitTerm{.name = "\""}}});
+  return makeBinExpr(std::move(expr), std::move(rhs), "+");
+}
+
 // Jan 18 2021
 // 18 Jan 2021
 // 18 Jan
@@ -908,7 +933,7 @@ std::unique_ptr<Expression> Parser::parseTerm() {
 
   if (auto tok = m_lexer.peak()) {
     if (auto n = parseNumber()) {
-      expr = makeNumberExpr(*n);
+      expr = parsePrimes(makeNumberExpr(*n));
     } else if (auto name = m_lexer.peakIf(Lexer::TokenType::String)) {
       if (auto next = m_lexer.peak(1); next && next->raw == "(") {
         m_lexer.next();

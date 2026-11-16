@@ -216,6 +216,9 @@ const UnitDef *CompoundUnit::sole() const {
 CompoundUnit soleUnit(UnitDef def) { return CompoundUnit{{UnitTerm{.def = std::move(def)}}}; }
 
 std::vector<UnitDef> UnitDatabase::matchExact(std::string_view q) const {
+  // a unit with no symbol would otherwise match the empty name
+  if (q.empty()) return {};
+
   return m_units | std::views::filter([&](const UnitDef &unit) {
            return equalsIgnoreCase(unit.id, q) || unit.symbol == q ||
                   std::ranges::any_of(unit.aliases, [&](auto &&str) { return equalsIgnoreCase(str, q); });

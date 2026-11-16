@@ -101,6 +101,11 @@ std::optional<Lexer::Token> Lexer::next() {
         break;
       }
       if (c == '"' || c == '\'') {
+        // glued to a number it is a prime mark, a unit name as in 5'10"
+        if (m_cursor > 0 && isDigit(m_data[m_cursor - 1])) {
+          ++m_cursor;
+          return makeToken(TokenType::String, String{.data = getSelection()});
+        }
         state = State::StringLiteral;
         stringLiteralOpener = c;
         startPos += 1;
