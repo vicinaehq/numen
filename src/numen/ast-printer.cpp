@@ -77,6 +77,8 @@ static void printASTNode(std::ostream &os, const Expression &expr, int depth = 0
           if (value.timezone) { os << ident() << "\ttimezone " << value.timezone->name << "\n"; }
 
           os << ident() << "}\n";
+        } else if constexpr (std::is_same_v<T, Boolean>) {
+          os << ident() << "Bool " << rang::fg::yellow << value.toString() << rang::fg::reset << "\n";
         } else if constexpr (std::is_same_v<T, NumberString>) {
           os << ident() << "Num " << rang::fg::yellow << value.render() << rang::fg::reset << "\n";
         } else if constexpr (std::is_same_v<T, FunctionCall>) {

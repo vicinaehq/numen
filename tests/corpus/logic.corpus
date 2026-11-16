@@ -1,0 +1,50 @@
+# boolean literals
+true                        => true
+false                       => false
+True                        => true
+FALSE                       => false
+true == true                => true
+true != false               => true
+(1 < 2) == true             => true
+
+# logical and
+true && true                => true
+true && false               => false
+false && true               => false
+false && false              => false
+
+# logical or
+true || true                => true
+true || false               => true
+false || true               => true
+false || false              => false
+
+# && and || bind looser than comparisons, which bind looser than arithmetic
+1 < 2 && 2 < 3              => true
+1 < 2 && 2 > 3              => false
+1 > 2 || 2 < 3              => true
+1 > 2 || 2 > 3              => false
+1 + 1 == 2 && 2 * 3 > 5     => true
+1 km == 1000 m && 30min < 1hour => true
+
+# && binds tighter than ||
+true || false && false      => true
+false && false || true      => true
+(true || false) && false    => false
+false && (false || true)    => false
+
+# chains and groups
+true && true && false       => false
+false || false || true      => true
+(1 < 2 && 3 < 4) == true    => true
+
+# both operands must be booleans, numbers are not truthy
+1 && 1                      => !error Invalid operands: Number and Number
+true && 1                   => !error Invalid operands: Boolean and Number
+0 || false                  => !error Invalid operands: Number and Boolean
+"a" || true                 => !error Invalid operands: Text and Boolean
+
+# single & and | stay bitwise
+5 & 3                       => 1
+5 | 3                       => 7
+5 & 3 == 1                  => true
