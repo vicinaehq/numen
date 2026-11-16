@@ -8,7 +8,6 @@ foo(1, 2)                   => !error Unknown function "foo"
 # currency conversion without a rate provider
 1 usd to eur                => !error No conversion rate available for usd.
 
-# an unclosed group, which used to be accepted silently
-(1 + 2                      => !error Expected ) to close the group
-((1                         => !error Expected ) to close the group
-(1 + (2                     => !error Expected ) to close the group
+# a group is closed by ) or by the end of the input, nothing else
+max(1, (2, 3)               => !error Expected ) to close the group
+(1 + 2;                     => !error Expected ) to close the group

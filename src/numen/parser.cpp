@@ -881,7 +881,8 @@ std::unique_ptr<Expression> Parser::parseTerm() {
     m_lexer.next();
     expr = pratParse();
 
-    if (auto close = m_lexer.peak(); !close || close->raw != ")") {
+    // like an argument list, a group left open at the end of the input is closed implicitly
+    if (auto close = m_lexer.peak(); close && close->raw != ")") {
       throw std::runtime_error("Expected ) to close the group");
     }
     m_lexer.next();

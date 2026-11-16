@@ -10,3 +10,11 @@ min(2, 100					=> 2
 4 *							=> 4
 1 + 2 *						=> 3
 sqrt(4 +					=> 2
+
+# a group does not have to be explicitly closed either
+
+(1 + 2						=> 3
+((1							=> 1
+(1 + (2						=> 3
+2 * (3 + 4					=> 14
+2 * (3 +					=> 6
