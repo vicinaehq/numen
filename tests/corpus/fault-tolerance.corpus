@@ -3,3 +3,10 @@
 sqrt(9						=> 3
 min(2, 100					=> 2
 100 + max(50, 25			=> 150
+
+# a binary operator left dangling at the end of the input is dropped
+
+2 +							=> 2
+4 *							=> 4
+1 + 2 *						=> 3
+sqrt(4 +					=> 2

@@ -1093,6 +1093,8 @@ std::unique_ptr<Expression> Parser::pratParse(int minPrec) {
     if (it != operators().end()) {
       if (it->precedence < minPrec) break;
       m_lexer.next();
+      // "2 +" is still being typed: drop the operator rather than fail
+      if (!m_lexer.peak()) break;
       auto right = pratParse(it->rightAssociative ? it->precedence : it->precedence + 1);
       left = makeBinExpr(std::move(left), std::move(right), std::string{it->id});
     } else {
