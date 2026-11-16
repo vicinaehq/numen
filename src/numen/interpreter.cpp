@@ -76,6 +76,12 @@ private:
       if (op == ">=") return Computed{.value = Boolean{lhs.value >= rhs.value}};
       if (op == "<") return Computed{.value = Boolean{lhs.value < rhs.value}};
       if (op == "<=") return Computed{.value = Boolean{lhs.value <= rhs.value}};
+      if (op == "&&" || op == "||") {
+        assertBinary<Boolean>(lhs, rhs);
+        const bool a = std::get<Boolean>(lhs.value).value;
+        const bool b = std::get<Boolean>(rhs.value).value;
+        return Computed{.value = Boolean{op == "&&" ? (a && b) : (a || b)}};
+      }
       return std::nullopt;
     }();
 
@@ -216,6 +222,8 @@ public:
         return executeFunction(value);
       } else if constexpr (std::is_same_v<T, Duration>) {
         return {value};
+      } else if constexpr (std::is_same_v<T, Boolean>) {
+        return Computed{.value = value};
       } else if constexpr (std::is_same_v<T, UntilExpression>) {
         return computeUntil(value);
       } else {

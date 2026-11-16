@@ -32,6 +32,10 @@ constexpr int EXPONENT_PRECEDENCE = 5;
 const auto &operators() {
   // clang-format off
   const static auto OPERATORS = std::to_array<OperatorDefinition>({
+     // below the comparisons, so the top level parses from -1
+     OperatorDefinition{.id = "||", .aliases = {"||"}, .precedence = -1},
+     OperatorDefinition{.id = "&&", .aliases = {"&&"}, .precedence = 0},
+
      OperatorDefinition{.id = "==", .aliases = {"=="}, .precedence = 1},
      OperatorDefinition{.id = "!=", .aliases = {"!="}, .precedence = 1},
      OperatorDefinition{.id = ">", .aliases = {">"}, .precedence = 1},
@@ -832,6 +836,11 @@ std::unique_ptr<Expression> Parser::parseTerm() {
     m_lexer.next();
     return std::make_unique<Expression>(StringLiteral{std::move(str->data)});
   }
+  if (auto tok = m_lexer.peakIf(Lexer::TokenType::String);
+      tok && (equalsIgnoreCase(tok->raw, "true") || equalsIgnoreCase(tok->raw, "false"))) {
+    m_lexer.next();
+    return std::make_unique<Expression>(Boolean{equalsIgnoreCase(tok->raw, "true")});
+  }
   if (auto until = parseUntil()) return until;
 
   auto expr = std::unique_ptr<Expression>();
@@ -1047,7 +1056,7 @@ std::unique_ptr<Expression> Parser::pratParse(int minPrec) {
 
   while (auto tok = m_lexer.peak()) {
     if (tok->raw == "to" || tok->raw == "in" || tok->raw == "->") {
-      if (minPrec > 0) break;
+      if (minPrec > -1) break;
 
       m_lexer.next();
 
