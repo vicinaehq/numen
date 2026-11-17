@@ -122,6 +122,14 @@ TEST_CASE("toRFC3339 discards subseconds") {
   CHECK(numen::DateTime{.time = t, .tz = test::zone("UTC")}.toRFC3339() == "2026-01-18T02:30:00Z");
 }
 
+TEST_CASE("ISO 8601 date times without a zone are local time") {
+  auto config = configAt({2026y, January, 18d});
+  config.timezone = test::zone("Europe/Moscow"); // UTC+3, no DST
+
+  test::assertExpr("2026-10-01T12:00", "2026-10-01 12:00:00 (Europe/Moscow)", config);
+  test::assertExpr("2026-10-01T12:00:30", "2026-10-01 12:00:30 (Europe/Moscow)", config);
+}
+
 TEST_CASE("json() renders date times as RFC 3339") {
   auto config = configAt({2026y, January, 18d});
   test::assertExpr("json(now)", "2026-01-18T00:00:00Z", config);

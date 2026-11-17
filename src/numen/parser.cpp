@@ -618,16 +618,26 @@ std::optional<ParsedTime> Parser::parseTime(bool afterDate) {
 }
 
 std::optional<DateString> Parser::parseRFC3339() {
-  // 2026-08-17T14:30:00Z
+  // 2026-08-17T14:30[:00[.5]][Z|+02:00]
   using L = Lexer;
   auto parsed = m_lexer.peakForward<L::Number, L::Operator, L::Number, L::Operator, L::Number, L::String,
-                                    L::Number, L::Operator, L::Number, L::Operator, L::Number>();
+                                    L::Number, L::Operator, L::Number>();
 
   if (!parsed) return std::nullopt;
 
-  auto &[year, s1, month, s2, day, tsep, hour, s3, min, s4, s] = *parsed;
+  auto &[year, s1, month, s2, day, tsep, hour, s3, min] = *parsed;
 
-  if (!(s1.op == "-" && s2.op == "-" && s3.op == ":" && s4.op == ":")) return std::nullopt;
+  if (!(s1.op == "-" && s2.op == "-" && s3.op == ":" && equalsIgnoreCase(tsep.data, "T"))) {
+    return std::nullopt;
+  }
+
+  std::size_t length = std::tuple_size_v<decltype(parsed)::value_type>;
+  double secs = 0;
+
+  if (auto tail = m_lexer.peakForward<L::Operator, L::Number>(length); tail && std::get<0>(*tail).op == ":") {
+    secs = std::get<1>(*tail).n.toDouble();
+    length += 2;
+  }
 
   // the shape alone does not make it a timestamp: every component has to be
   // one a clock could read, or the cast below has nothing to land on
@@ -636,8 +646,9 @@ std::optional<DateString> Parser::parseRFC3339() {
   auto dayOfMonth = clockComponent(day.n.toDouble(), 31);
   auto hours = clockComponent(hour.n.toDouble(), 23);
   auto minutes = clockComponent(min.n.toDouble(), 59);
-  // :60 is a leap second, which is a reading RFC 3339 allows
-  auto seconds = clockComponent(s.n.toDouble(), 60);
+  // :60 is a leap second, which is a reading RFC 3339 allows. fractions of a
+  // second are dropped, a time only holds whole seconds
+  auto seconds = clockComponent(std::trunc(secs), 60);
 
   if (!yr || !mon || !dayOfMonth || !hours || !minutes || !seconds) return std::nullopt;
   if (*mon < 1 || *dayOfMonth < 1) return std::nullopt;
@@ -653,18 +664,24 @@ std::optional<DateString> Parser::parseRFC3339() {
                                  .seconds = std::chrono::seconds{*seconds},
                              }};
 
-  m_lexer.advance(std::tuple_size_v<decltype(parsed)::value_type>);
+  m_lexer.advance(static_cast<int>(length));
+
+  // an offset is a sign glued to the time: "14:30 + 1 hour" adds an hour, it is not UTC+1
+  auto sign = m_lexer.peak();
+  const bool hasOffset = sign && (sign->raw == "+" || sign->raw == "-") && m_lexer.isGluedLeft(*sign);
 
   if (auto zulu = m_lexer.peakAs<Lexer::String>(); zulu && zulu->data == "Z") {
     m_lexer.next();
     ds.timezone = TimezoneOffset{.name = "UTC"};
     return ds;
-  } else if (auto offset = parseTimezoneOffset()) {
+  } else if (auto offset = hasOffset ? parseTimezoneOffset() : std::nullopt) {
     ds.timezone = TimezoneOffset{.name = "UTC", .offset = *offset};
     return ds;
   }
 
-  return std::nullopt;
+  // without a zone it is local time, read the same as "2026-08-17 14:30"
+  ds.timezone = parseTimezone();
+  return ds;
 }
 
 std::optional<std::chrono::seconds> Parser::parseTimezoneOffset() {
