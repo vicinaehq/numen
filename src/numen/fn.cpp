@@ -66,6 +66,10 @@ void FunctionCtx::expectAtLeast(std::size_t n) const {
   }
 }
 
+void FunctionDatabase::add(std::string_view name, FunctionHandler handler, FunctionOptions options) {
+  m_fns.emplace_back(Entry{.name = name, .fn = std::move(handler), .options = options});
+}
+
 void FunctionDatabase::add(std::string_view name, FunctionHandler handler, bool isConverter) {
   m_fns.emplace_back(Entry{.name = name, .fn = std::move(handler)});
   if (isConverter) { m_convNames.emplace_back(name); }
@@ -76,7 +80,11 @@ void FunctionDatabase::addConverter(std::string_view name, FunctionHandler handl
 }
 
 const FunctionHandler *FunctionDatabase::find(std::string_view name) const {
-  auto it = std::ranges::find(m_fns, name, &Entry::name);
+  const auto it = std::ranges::find_if(m_fns, [&](const Entry &entry) {
+    if (!entry.options.caseSensitive) return equalsIgnoreCase(entry.name, name);
+    return entry.name == name;
+  });
+
   return it == m_fns.end() ? nullptr : &it->fn;
 }
 
@@ -234,6 +242,8 @@ std::int64_t toInt64(const FunctionCtx &ctx, std::size_t i) {
 }
 
 FunctionDatabase makeBuiltin() {
+  using Opts = FunctionDatabase::FunctionOptions;
+
   FunctionDatabase db;
 
   for (const auto &def : UNARY_FUNCTIONS) {
@@ -431,6 +441,56 @@ FunctionDatabase makeBuiltin() {
     const std::chrono::local_time localTime{displayTz->to_local(dt.time + dt.offset).time_since_epoch()};
     return Computed{.value = std::format("{:%A}", localTime)};
   });
+
+  // Finance
+
+  // Rate of Return on Investment
+  db.add(
+      "rri",
+      [](const FunctionCtx &ctx) {
+        ctx.expectAtLeast(3);
+        const double periods = ctx.number(0).n.toDouble();
+
+        if (periods == 0) throw std::runtime_error("Periods cannot be zero");
+
+        const double start = ctx.number(1).n.toDouble();
+        const double end = ctx.number(2).n.toDouble();
+        const double rate = std::pow((end / start), 1.0 / periods) - 1;
+
+        return Computed{Num{rate}};
+      },
+      Opts{.caseSensitive = false});
+
+  // effective annual rate
+  db.add(
+      "effect",
+      [](const FunctionCtx &ctx) {
+        ctx.expectAtLeast(2);
+        const double nominalRate = ctx.number(0).n.toDouble();
+        const double periods = ctx.number(1).n.toDouble();
+
+        if (periods == 0) throw std::runtime_error("Periods cannot be zero");
+
+        const double apy = std::pow((1 + nominalRate / periods), periods) - 1;
+
+        return Computed{Num{apy}};
+      },
+      Opts{.caseSensitive = false});
+
+  db.add(
+      "nominal",
+      [](const FunctionCtx &ctx) {
+        ctx.expectAtLeast(2);
+        const double effect = ctx.number(0).n.toDouble();
+        const double n = ctx.number(1).n.toDouble();
+
+        if (n == 0) throw std::runtime_error("Periods cannot be zero");
+
+        const double apr = n * (std::pow(1 + effect, 1 / n) - 1);
+
+        return Computed{Num{apr}};
+      },
+      Opts{.caseSensitive = false});
 
   return db;
 }

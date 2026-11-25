@@ -142,7 +142,7 @@ struct UntilExpression {
 struct Expression {
   std::variant<BinaryExpression, UnaryExpression, PostfixExpression, NumberString, DateString, UnitExpression,
                ConversionExpression, StringLiteral, Duration, FunctionCall, PercentExpression,
-               UntilExpression>
+               UntilExpression, Boolean>
       data;
 
   const BinaryExpression *asBinaryExpression() const { return as<BinaryExpression>(); }
@@ -225,9 +225,10 @@ protected:
   bool isPostfixPercent(const Lexer::Token &pct);
   std::optional<Scanned<numen::Duration>> scanDuration();
   std::unique_ptr<Expression> parseTerm();
-  std::unique_ptr<Expression> pratParse(int minPrec = 0);
+  std::unique_ptr<Expression> pratParse(int minPrec = -1);
   std::unique_ptr<Expression> parseMul() { return pratParse(4); }
   std::optional<numen::Value> parseNumber();
+  std::unique_ptr<Expression> parsePrimes(std::unique_ptr<Expression> major);
   std::unique_ptr<Expression> parseUntil();
   bool isFunctionParameterSeparator(std::string_view tok) const;
 

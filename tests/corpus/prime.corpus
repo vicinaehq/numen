@@ -1,0 +1,42 @@
+# prime notation: a quote glued to a number is feet (') or inches (")
+5'                          => 5ft
+5"                          => 5in
+1.5'                        => 1.5ft
+5'10"                       => 5.833333ft
+6'0"                        => 6ft
+
+# the closing inch mark can be left off
+5'10                        => 5.833333ft
+5'2                         => 5.166667ft
+
+# the inches are never read as a squared unit
+5'2"                        => 5.166667ft
+5'3                         => 5.25ft
+
+# conversions
+5'10" to cm                 => 177.8cm
+5'10 to cm                  => 177.8cm
+5'10" to in                 => 70in
+5'11.5" to cm               => 181.61cm
+5' to cm                    => 152.4cm
+5" to cm                    => 12.7cm
+
+# arithmetic on the compound
+5'10" + 2"                  => 6ft
+2 * 5'10"                   => 11.666667ft
+-5'10"                      => -5.833333ft
+
+# only lengths for now: the minutes and seconds reading is not supported
+5'10" to s                  => !error Incompatible units: foot (length) to second (duration)
+
+# an empty name is never a unit (it used to read as parsec)
+5 ''                        => 5
+
+# a quote that is not glued to a number still delimits text
+"5'10"                      => 5'10
+'5"'                        => 5"
+5 'abc'                     => 5
+'hello world'               => hello world
+upper('a1')                 => A1
+"12:30"                     => 12:30
+'unfinished                 => unfinished

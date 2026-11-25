@@ -26,8 +26,13 @@ using FunctionHandler = std::function<Computed(const FunctionCtx &)>;
 
 class FunctionDatabase {
 public:
+  struct FunctionOptions {
+    bool caseSensitive = true;
+  };
+
   static const FunctionDatabase &builtin();
 
+  void add(std::string_view name, FunctionHandler handler, FunctionOptions options);
   void add(std::string_view name, FunctionHandler handler, bool isConverter = false);
   void addConverter(std::string_view name, FunctionHandler handler);
   const FunctionHandler *find(std::string_view name) const;
@@ -37,6 +42,7 @@ private:
   struct Entry {
     std::string_view name;
     FunctionHandler fn;
+    FunctionOptions options;
   };
 
   std::vector<Entry> m_fns;

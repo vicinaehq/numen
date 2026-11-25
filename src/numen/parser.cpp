@@ -32,6 +32,10 @@ constexpr int EXPONENT_PRECEDENCE = 5;
 const auto &operators() {
   // clang-format off
   const static auto OPERATORS = std::to_array<OperatorDefinition>({
+     // below the comparisons, so the top level parses from -1
+     OperatorDefinition{.id = "||", .aliases = {"||"}, .precedence = -1},
+     OperatorDefinition{.id = "&&", .aliases = {"&&"}, .precedence = 0},
+
      OperatorDefinition{.id = "==", .aliases = {"=="}, .precedence = 1},
      OperatorDefinition{.id = "!=", .aliases = {"!="}, .precedence = 1},
      OperatorDefinition{.id = ">", .aliases = {">"}, .precedence = 1},
@@ -258,6 +262,31 @@ std::optional<NamedUnit> Parser::parseConversionTarget() {
   }
 
   return target;
+}
+
+// 5'10" is 5' + 10", and the closing mark can be left off as in 5'10. the lexer
+// only reads a quote as a prime mark when it is glued to a number
+std::unique_ptr<Expression> Parser::parsePrimes(std::unique_ptr<Expression> major) {
+  const auto isMark = [](const std::optional<Lexer::Token> &tok, std::string_view mark) {
+    return tok && tok->type == Lexer::TokenType::String && tok->raw == mark;
+  };
+
+  auto mark = m_lexer.peak();
+  if (!isMark(mark, "'") && !isMark(mark, "\"")) return major;
+  m_lexer.next();
+
+  auto expr = makeUnit(std::move(major), NamedUnit{.terms = {NamedUnitTerm{.name = mark->raw}}});
+  if (mark->raw != "'") return expr;
+
+  auto minor = m_lexer.peakIf(Lexer::TokenType::Number);
+  if (!minor || !mark->isAdjacent(*minor)) return expr;
+  m_lexer.next();
+
+  if (isMark(m_lexer.peak(), "\"")) m_lexer.next();
+
+  auto rhs =
+      makeUnit(makeNumberExpr(minor->asNumber()->n), NamedUnit{.terms = {NamedUnitTerm{.name = "\""}}});
+  return makeBinExpr(std::move(expr), std::move(rhs), "+");
 }
 
 // Jan 18 2021
@@ -589,16 +618,26 @@ std::optional<ParsedTime> Parser::parseTime(bool afterDate) {
 }
 
 std::optional<DateString> Parser::parseRFC3339() {
-  // 2026-08-17T14:30:00Z
+  // 2026-08-17T14:30[:00[.5]][Z|+02:00]
   using L = Lexer;
   auto parsed = m_lexer.peakForward<L::Number, L::Operator, L::Number, L::Operator, L::Number, L::String,
-                                    L::Number, L::Operator, L::Number, L::Operator, L::Number>();
+                                    L::Number, L::Operator, L::Number>();
 
   if (!parsed) return std::nullopt;
 
-  auto &[year, s1, month, s2, day, tsep, hour, s3, min, s4, s] = *parsed;
+  auto &[year, s1, month, s2, day, tsep, hour, s3, min] = *parsed;
 
-  if (!(s1.op == "-" && s2.op == "-" && s3.op == ":" && s4.op == ":")) return std::nullopt;
+  if (!(s1.op == "-" && s2.op == "-" && s3.op == ":" && equalsIgnoreCase(tsep.data, "T"))) {
+    return std::nullopt;
+  }
+
+  std::size_t length = std::tuple_size_v<decltype(parsed)::value_type>;
+  double secs = 0;
+
+  if (auto tail = m_lexer.peakForward<L::Operator, L::Number>(length); tail && std::get<0>(*tail).op == ":") {
+    secs = std::get<1>(*tail).n.toDouble();
+    length += 2;
+  }
 
   // the shape alone does not make it a timestamp: every component has to be
   // one a clock could read, or the cast below has nothing to land on
@@ -607,8 +646,9 @@ std::optional<DateString> Parser::parseRFC3339() {
   auto dayOfMonth = clockComponent(day.n.toDouble(), 31);
   auto hours = clockComponent(hour.n.toDouble(), 23);
   auto minutes = clockComponent(min.n.toDouble(), 59);
-  // :60 is a leap second, which is a reading RFC 3339 allows
-  auto seconds = clockComponent(s.n.toDouble(), 60);
+  // :60 is a leap second, which is a reading RFC 3339 allows. fractions of a
+  // second are dropped, a time only holds whole seconds
+  auto seconds = clockComponent(std::trunc(secs), 60);
 
   if (!yr || !mon || !dayOfMonth || !hours || !minutes || !seconds) return std::nullopt;
   if (*mon < 1 || *dayOfMonth < 1) return std::nullopt;
@@ -624,18 +664,24 @@ std::optional<DateString> Parser::parseRFC3339() {
                                  .seconds = std::chrono::seconds{*seconds},
                              }};
 
-  m_lexer.advance(std::tuple_size_v<decltype(parsed)::value_type>);
+  m_lexer.advance(static_cast<int>(length));
+
+  // an offset is a sign glued to the time: "14:30 + 1 hour" adds an hour, it is not UTC+1
+  auto sign = m_lexer.peak();
+  const bool hasOffset = sign && (sign->raw == "+" || sign->raw == "-") && m_lexer.isGluedLeft(*sign);
 
   if (auto zulu = m_lexer.peakAs<Lexer::String>(); zulu && zulu->data == "Z") {
     m_lexer.next();
     ds.timezone = TimezoneOffset{.name = "UTC"};
     return ds;
-  } else if (auto offset = parseTimezoneOffset()) {
+  } else if (auto offset = hasOffset ? parseTimezoneOffset() : std::nullopt) {
     ds.timezone = TimezoneOffset{.name = "UTC", .offset = *offset};
     return ds;
   }
 
-  return std::nullopt;
+  // without a zone it is local time, read the same as "2026-08-17 14:30"
+  ds.timezone = parseTimezone();
+  return ds;
 }
 
 std::optional<std::chrono::seconds> Parser::parseTimezoneOffset() {
@@ -807,6 +853,11 @@ std::unique_ptr<Expression> Parser::parseTerm() {
     m_lexer.next();
     return std::make_unique<Expression>(StringLiteral{std::move(str->data)});
   }
+  if (auto tok = m_lexer.peakIf(Lexer::TokenType::String);
+      tok && (equalsIgnoreCase(tok->raw, "true") || equalsIgnoreCase(tok->raw, "false"))) {
+    m_lexer.next();
+    return std::make_unique<Expression>(Boolean{equalsIgnoreCase(tok->raw, "true")});
+  }
   if (auto until = parseUntil()) return until;
 
   auto expr = std::unique_ptr<Expression>();
@@ -881,7 +932,8 @@ std::unique_ptr<Expression> Parser::parseTerm() {
     m_lexer.next();
     expr = pratParse();
 
-    if (auto close = m_lexer.peak(); !close || close->raw != ")") {
+    // like an argument list, a group left open at the end of the input is closed implicitly
+    if (auto close = m_lexer.peak(); close && close->raw != ")") {
       throw std::runtime_error("Expected ) to close the group");
     }
     m_lexer.next();
@@ -908,7 +960,7 @@ std::unique_ptr<Expression> Parser::parseTerm() {
 
   if (auto tok = m_lexer.peak()) {
     if (auto n = parseNumber()) {
-      expr = makeNumberExpr(*n);
+      expr = parsePrimes(makeNumberExpr(*n));
     } else if (auto name = m_lexer.peakIf(Lexer::TokenType::String)) {
       if (auto next = m_lexer.peak(1); next && next->raw == "(") {
         m_lexer.next();
@@ -1021,7 +1073,7 @@ std::unique_ptr<Expression> Parser::pratParse(int minPrec) {
 
   while (auto tok = m_lexer.peak()) {
     if (tok->raw == "to" || tok->raw == "in" || tok->raw == "->") {
-      if (minPrec > 0) break;
+      if (minPrec > -1) break;
 
       m_lexer.next();
 
@@ -1093,6 +1145,8 @@ std::unique_ptr<Expression> Parser::pratParse(int minPrec) {
     if (it != operators().end()) {
       if (it->precedence < minPrec) break;
       m_lexer.next();
+      // "2 +" is still being typed: drop the operator rather than fail
+      if (!m_lexer.peak()) break;
       auto right = pratParse(it->rightAssociative ? it->precedence : it->precedence + 1);
       left = makeBinExpr(std::move(left), std::move(right), std::string{it->id});
     } else {
