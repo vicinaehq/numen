@@ -177,3 +177,34 @@ TEST_CASE("a sum is as implicit as a literal, only a 'to' pins the currency", "[
 
   CHECK(calc.evaluate("(50 usd to usd) + 50 usd", fr) == "$100");
 }
+
+TEST_CASE("virtual currencies are pegged to a fixed store price", "[currency]") {
+  auto calc = test::mockCalc();
+
+  CHECK(calc.evaluate("800 vbucks to usd") == "$8.99");
+  CHECK(calc.evaluate("500 crgems to usd") == "$4.99");
+  CHECK(calc.evaluate("500 cocgems to usd") == "$4.99");
+  CHECK(calc.evaluate("400 robux to usd") == "$4.99");
+  CHECK(calc.evaluate("1720 minecoins to usd") == "$9.99");
+  CHECK(calc.evaluate("475 vp to usd") == "$4.99");
+  CHECK(calc.evaluate("575 riotpoints to usd") == "$4.99");
+  CHECK(calc.evaluate("1100 codpoints to usd") == "$9.99");
+  CHECK(calc.evaluate("1000 apexcoins to usd") == "$9.99");
+  CHECK(calc.evaluate("500 owcoins to usd") == "$4.99");
+  CHECK(calc.evaluate("500 fcpoints to usd") == "$4.99");
+  CHECK(calc.evaluate("60 genesiscrystals to usd") == "$0.99");
+  CHECK(calc.evaluate("100 pokecoins to usd") == "$0.99");
+
+  CHECK(calc.evaluate("8.99 usd to vbucks") == "800 V-Bucks");
+  CHECK(calc.evaluate("10 usd to robux") == "802 Robux");
+
+  CHECK(calc.evaluate("800 vbucks to crgems") == "901 CR Gems");
+  CHECK(calc.evaluate("800 vbucks to eur") == "€8.3");
+
+  // "rp" stays the rupiah, never riot points
+  CHECK(calc.evaluate("1 Rp to idr"));
+
+  // no provider needed between a currency and its peg
+  numen::Numen bare;
+  CHECK(bare.evaluate("800 vbucks to usd") == "$8.99");
+}

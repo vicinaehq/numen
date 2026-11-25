@@ -356,8 +356,25 @@ std::optional<UnitDef> UnitDatabase::findUnit(const std::string &id) const {
   return std::nullopt;
 }
 
+std::expected<std::pair<UnitDef, double>, std::string> UnitDatabase::resolvePeg(const UnitDef &unit) const {
+  if (unit.peggedTo.empty()) return std::pair{unit, 1.0};
+
+  auto peg = findUnit(unit.peggedTo);
+  if (!peg) return std::unexpected(std::format("{} is pegged to unknown currency {}", unit.id, unit.peggedTo));
+
+  return std::pair{std::move(*peg), unit.factor};
+}
+
 std::expected<double, std::string> UnitDatabase::factorOf(const UnitDef &unit) const {
   if (!traitsOf(unit.dimension).dynamicFactor) return unit.factor;
+
+  if (!unit.peggedTo.empty()) {
+    auto peg = resolvePeg(unit);
+    if (!peg) return std::unexpected(peg.error());
+    auto base = factorOf(peg->first);
+    if (!base) return std::unexpected(base.error());
+    return peg->second * *base;
+  }
 
   if (!m_currencyProvider) return std::unexpected("No currency provider is configured");
 
@@ -374,18 +391,26 @@ std::expected<double, std::string> UnitDatabase::conversionRatio(const CompoundU
                                                                  const CompoundUnit &to) const {
   std::map<std::string, std::pair<UnitDef, int>> net;
 
-  auto accumulate = [&](const CompoundUnit &unit, int sign) {
+  double ratio = 1;
+
+  // a pegged currency folds into its peg, so "vbuck to usd" needs no rate
+  auto accumulate = [&](const CompoundUnit &unit, int sign) -> std::expected<void, std::string> {
     for (const auto &term : unit.terms) {
-      auto &[def, exponent] = net[term.def.id];
-      def = term.def;
-      exponent += term.exponent * sign;
+      auto peg = resolvePeg(term.def);
+      if (!peg) return std::unexpected(peg.error());
+
+      const int power = term.exponent * sign;
+      ratio *= std::pow(peg->second, power);
+
+      auto &[def, exponent] = net[peg->first.id];
+      def = std::move(peg->first);
+      exponent += power;
     }
+    return {};
   };
 
-  accumulate(from, 1);
-  accumulate(to, -1);
-
-  double ratio = 1;
+  if (auto res = accumulate(from, 1); !res) return std::unexpected(res.error());
+  if (auto res = accumulate(to, -1); !res) return std::unexpected(res.error());
 
   for (const auto &[id, entry] : net) {
     const auto &[def, exponent] = entry;
@@ -408,6 +433,12 @@ std::expected<double, std::string> UnitDatabase::convert(double n, const UnitDef
   if (from.dimension != to.dimension) {
     return std::unexpected(
         std::format("No idea how to convert {} to {}, as they are not of the same type.", from.id, to.id));
+  }
+
+  if (!from.peggedTo.empty() || !to.peggedTo.empty()) {
+    auto ratio = conversionRatio(soleUnit(from), soleUnit(to));
+    if (!ratio) return std::unexpected(ratio.error());
+    return n * *ratio;
   }
 
   auto fromFactor = factorOf(from);

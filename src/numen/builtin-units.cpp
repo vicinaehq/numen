@@ -304,6 +304,22 @@ std::span<const UnitDef> units::builtins() {
     {.id = "ves", .aliases = {"bolivar"}, .name = "Venezuelan Bolívar", .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 2},
     {.id = "btc", .aliases = {"bitcoin"},                   .symbol = "₿",   .name = "Bitcoin",            .symbolPrefix = true, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 8},
     {.id = "eth", .aliases = {"ether", "ethereum"},         .symbol = "Ξ",   .name = "Ethereum",           .symbolPrefix = true, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 8},
+
+    // virtual currencies, pegged to the smallest US store pack. no "rp" or "cp":
+    // those are the rupiah's Rp and centi-anything
+    {.id = "vbuck", .aliases = {"vbucks"}, .symbol = " V-Bucks", .name = "V-Bucks", .factor = 8.99 / 800, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0, .peggedTo = "usd"},
+    {.id = "crgem", .aliases = {"clashroyalegem", "royalegem"}, .symbol = " CR Gems", .name = "Clash Royale Gems", .factor = 4.99 / 500, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0, .peggedTo = "usd"},
+    {.id = "cocgem", .aliases = {"clashofclansgem", "clangem"}, .symbol = " CoC Gems", .name = "Clash of Clans Gems", .factor = 4.99 / 500, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0, .peggedTo = "usd"},
+    {.id = "robux", .aliases = {}, .symbol = " Robux", .name = "Robux", .factor = 4.99 / 400, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0, .peggedTo = "usd"},
+    {.id = "minecoin", .aliases = {}, .symbol = " Minecoins", .name = "Minecoins", .factor = 9.99 / 1720, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0, .peggedTo = "usd"},
+    {.id = "valorantpoint", .aliases = {"vp"}, .symbol = " VP", .name = "Valorant Points", .factor = 4.99 / 475, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0, .peggedTo = "usd"},
+    {.id = "riotpoint", .aliases = {}, .symbol = " RP", .name = "Riot Points", .factor = 4.99 / 575, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0, .peggedTo = "usd"},
+    {.id = "codpoint", .aliases = {}, .symbol = " CP", .name = "COD Points", .factor = 9.99 / 1100, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0, .peggedTo = "usd"},
+    {.id = "apexcoin", .aliases = {}, .symbol = " Apex Coins", .name = "Apex Coins", .factor = 9.99 / 1000, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0, .peggedTo = "usd"},
+    {.id = "overwatchcoin", .aliases = {"owcoin"}, .symbol = " Overwatch Coins", .name = "Overwatch Coins", .factor = 4.99 / 500, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0, .peggedTo = "usd"},
+    {.id = "fcpoint", .aliases = {}, .symbol = " FC Points", .name = "FC Points", .factor = 4.99 / 500, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0, .peggedTo = "usd"},
+    {.id = "genesiscrystal", .aliases = {}, .symbol = " Genesis Crystals", .name = "Genesis Crystals", .factor = 0.99 / 60, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0, .peggedTo = "usd"},
+    {.id = "pokecoin", .aliases = {"pokécoin"}, .symbol = " PokéCoins", .name = "PokéCoins", .factor = 0.99 / 100, .dimension = dimensions::CURRENCY, .family = families::CURRENCY, .decimals = 0, .peggedTo = "usd"},
   });
   // clang-format on
 

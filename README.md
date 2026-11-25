@@ -16,6 +16,7 @@
 - Full support for units
 - Date-time arithmetic and timezone conversion based on timezone name, city/region/state name.
 - Currency conversion support (requires implementing a currency provider, this repo contains an example of one).
+- Virtual currencies (V-Bucks, Robux, Clash Royale gems, Valorant Points, …) pegged to their US store price: `800 vbucks to usd`.
 - Natural language syntactic sugar: you can write expressions like `20% of 100` to calculate `0.20 * 100`.
 
 ## Goals

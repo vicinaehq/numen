@@ -89,6 +89,9 @@ struct UnitDef {
 
   // target to convert this unit to
   std::string implicitTarget;
+
+  // a fixed price instead of a market rate: one unit is `factor` of this currency
+  std::string peggedTo;
 };
 
 struct UnitTerm {
@@ -160,6 +163,7 @@ private:
   std::vector<UnitDef> matchExact(std::string_view q) const;
   std::vector<UnitDef> expandPrefixed(std::string_view q) const;
   std::optional<UnitDef> providerCurrency(std::string_view q) const;
+  std::expected<std::pair<UnitDef, double>, std::string> resolvePeg(const UnitDef &unit) const;
 
   std::vector<UnitDef> m_units;
   const numen::AbstractCurrencyProvider *m_currencyProvider = nullptr;
